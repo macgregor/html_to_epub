@@ -69,7 +69,7 @@ class Chapter:
         epub_chapter.add_item(css)
         return epub_chapter
         
-class Contents:
+class TableOfContents:
     toc_entry_class = 'entry-content'
     
     def __init__(self, url, cache_location='./cache/parahumans'):
@@ -114,63 +114,65 @@ class Contents:
 
         return self.chapters.values()        
 
-    def to_epub(self, book, css):
+    def to_epub(self, book, css, refresh=False):
         sections = OrderedDict()
         chapters = []
 
-        for chapter in self.get_chapters():
+        for chapter in self.get_chapters(refresh):
             epub_chapter = chapter.to_epub(css)
             chapters.append(epub_chapter)
-            book.add_item(epub_chapter)
+            epub_section = chapter.get_epub_section(refresh)
 
-            print(chapter.get_epub_section())
-
-            if chapter.get_epub_section() not in sections:
-                sections[chapter.get_epub_section()] = []
-            sections[chapter.get_epub_section()].append(epub_chapter)
+            if epub_section not in sections:
+                sections[epub_section] = []
+            sections[epub_section].append(epub_chapter)
 
         book.toc = [(epub.Section(section), tuple(chapters)) for section, chapters in sections.items()]
+
+        return chapters
+
+class Book:
+    def __init__(self, toc_url, title, author):
+        self.toc = TableOfContents(toc_url)
+        self.title = title
+        self.author = author
+        self.init_epub()
+
+    def init_epub(self):
+        self.book = epub.EpubBook()
+        self.book.set_identifier(str(uuid.uuid4()))
+        self.book.set_title(self.title)
+        self.book.set_language('en')
+        self.book.add_author(self.author)
         
-        # basic spine
-        book.spine = ['nav'] + chapters
-        return book
+        #css
+        self.book.add_item(Book.get_css())
+
+    def get_css(filename='kindle.css', uid='style_default'):
+        with open(filename, 'r') as css:
+            return epub.EpubItem(uid=uid, file_name="style/"+filename, media_type="text/css", content=css.read())
+
+    def generate_from_web(self, refresh=False):
+        chapters = self.toc.to_epub(self.book, Book.get_css(), refresh)
+
+        #spine is used when navigating forward and backward through the epub
+        #first element is 'nav' followed by each epub.EpubHtml chapter in order
+        self.book.spine = ['nav']
+
+        for chapter in chapters:
+            self.book.add_item(chapter)
+            self.book.spine.append(chapter)
+
+        self.book.add_item(epub.EpubNcx())
+        self.book.add_item(epub.EpubNav())
+
+        return self.book
         
 if __name__ == '__main__':
-    book = epub.EpubBook()
+    book = Book('https://parahumans.wordpress.com/table-of-TableOfContents/', 'Parahumans - Worm', 'Wildbow')
 
-    # set metadata
-    book.set_identifier(str(uuid.uuid4()))
-    book.set_title('Parahumans - Worm')
-    book.set_language('en')
-
-    book.add_author('Wildbow')
-
-    toc = Contents('https://parahumans.wordpress.com/table-of-contents/')
-    toc.chapters['https://parahumans.wordpress.com/2013/03/05/scourge-19-5/'] = Chapter('https://parahumans.wordpress.com/2013/03/05/scourge-19-5/')
-    toc.chapters['https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-3-agitation/3-05/'] = Chapter('https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-3-agitation/3-05/')
-
-    # define CSS style
-    toc_css = open('toc.css', 'r')
-    style = toc_css.read()
-    toc_css.close()
-
-    nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=style)
-
-    kindle_css = open('kindle.css', 'r')
-    style = kindle_css.read()
-    kindle_css.close()
-
-    default_css = epub.EpubItem(uid="style_default", file_name="style/default.css", media_type="text/css", content=style)
-
-    # add CSS file
-    book.add_item(nav_css)
-    book.add_item(default_css)    
-
-    book = toc.to_epub(book, default_css)
-
-    # add default NCX and Nav file
-    book.add_item(epub.EpubNcx())
-    book.add_item(epub.EpubNav())
+    book.toc.chapters['https://parahumans.wordpress.com/2013/03/05/scourge-19-5/'] = Chapter('https://parahumans.wordpress.com/2013/03/05/scourge-19-5/')
+    book.toc.chapters['https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-3-agitation/3-05/'] = Chapter('https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-3-agitation/3-05/')
 
     # write to the file
-    epub.write_epub('test.epub', book, {})
+    epub.write_epub('test.epub', book.generate_from_web(), {})
