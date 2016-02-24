@@ -4,7 +4,7 @@ A python script to convert a blog published web series into a Kindle friendly ep
 
 #About
 I was reading a rather long web series and got tired of keeping track of my place across multiple devices and draining my pathetic phone battery.
-Unfortunately the author decided not to provide an ebook in an form in hopes that he would be able to sell a book deal one day. I wish him
+Unfortunately the author decided not to provide an ebook in any form in hopes that he would be able to sell a book deal one day. I wish him
 luck in that endevour, but I am not content to wait. Python to the rescue.
 
 
