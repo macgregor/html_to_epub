@@ -6,19 +6,26 @@ from urllib.request import urlopen
 from urllib import parse
 from ebooklib import epub
 from tqdm import tqdm
-import pickle, uuid, re, os
+import pickle, uuid, re, os, traceback
+
+html_cache_location = './cache/html'
+pickle_cache = './cache/parahumans'
+
+os.makedirs(html_cache_location, exist_ok=True)
 
 class Chapter:
     title_class = 'entry-title'
     chapter_class = 'entry-content'
-    section_regex = '^(\w*) \d.*$'
+    section_regex = '^(\w+)\s*.*$'
     
-    def __init__(self, url):
+    def __init__(self, url, cache_location=html_cache_location):
         url = parse.urlsplit(url)
         url = list(url)
         url[2] = parse.quote(url[2])
         url = parse.urlunsplit(url)
 
+        self.cache_location = cache_location
+        self.cache_filename = str(uuid.uuid4())+'.html'
         self.url = url
         self.tree = None
         self.title = None
@@ -30,14 +37,21 @@ class Chapter:
         return odict
 
     def load_dom(self):
-        response = urlopen(self.url)
-        self.tree = lxml.html.fromstring(response.read().decode('utf-8', 'ignore'))
-        response.close()
+        with open(os.path.join(self.cache_location, self.cache_filename), 'r') as f:
+            self.tree = lxml.html.fromstring(f.read())
 
         self.get_title()
         self.get_text()
 
-        return self.tree   
+        return self.tree
+
+    def save_html(self):
+        response = urlopen(self.url)
+        content = response.read().decode('utf-8', 'ignore')
+        response.close()
+
+        with open(os.path.join(self.cache_location, self.cache_filename), 'w') as out:
+            out.write(content)
         
     def get_title(self):
         if self.tree is not None:
@@ -104,7 +118,7 @@ class TableOfContents:
         return self.chapters
 
 class Book:
-    def __init__(self, toc_url, title, author, cache_location='./cache/parahumans'):
+    def __init__(self, toc_url, title, author, cache_location=pickle_cache):
         self.cache_location = cache_location
         self.toc = TableOfContents(toc_url)
         self.chapters = None
@@ -112,13 +126,13 @@ class Book:
         self.author = author
 
     @classmethod
-    def restore(cls, cache_location='./cache/parahumans'):
+    def restore(cls, cache_location=pickle_cache):
         with open(cache_location, 'rb') as f: 
             return pickle.load(f)
 
     def cache(self):
         with open(self.cache_location, 'wb') as cache:
-            pickle.dump(self, cache)
+            pickle.dump(self, cache)    
 
     def init_html(self):
         print('Scraping table of contents data from website')
@@ -127,8 +141,7 @@ class Book:
         
         print('Scraping chapter data from website')
         for chapter in tqdm(self.chapters):
-            print(chapter.url)
-            chapter.load_dom()
+            chapter.save_html()
 
     def init_epub(self):
         self.book = epub.EpubBook()
@@ -153,15 +166,21 @@ class Book:
         self.book.spine = ['nav']
 
         sections = OrderedDict()
+        current_section = None
 
         print('Generate chapters')
         for chapter in tqdm(self.chapters):
+            chapter.load_dom()
             epub_chapter = chapter.to_epub(Book.get_css())
 
             self.book.add_item(epub_chapter)
             self.book.spine.append(epub_chapter)
 
             epub_section = chapter.get_epub_section()
+            if 'interlude' not in epub_section.lower():
+                current_section = epub_section
+            else:
+                epub_section = current_section
 
             if epub_section not in sections:
                 sections[epub_section] = []
@@ -185,10 +204,9 @@ if __name__ == '__main__':
         book.init_html()
         book.cache()
 
-    # write to the file
-    epub.write_epub('test.epub', book.generate_epub(), {})
-    '''
-    chapter = Chapter('https://parahumans.wordpress.com/2012/07/26/interlude-12½/')
-    chapter.load_dom()
-    print(chapter.get_text())
-    '''
+    try:
+        # write to the file
+        epub.write_epub('parahumans.epub', book.generate_epub(), {})
+    except Exception as e:
+        print(traceback.format_exc())
+        book.cache()
