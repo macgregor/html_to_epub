@@ -1,8 +1,6 @@
 from ebooklib import epub
 from lxml.etree import tostring
 from lib.book import Book
-from lib.chapter import Chapter                     #need to import for pickle to work properly
-from lib.table_of_contents import TableOfContents   #need to import for pickle to work properly
 from lib.config import Config
 import optparse, os, traceback, shutil
         
