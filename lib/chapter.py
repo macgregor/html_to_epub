@@ -1,6 +1,5 @@
 import lxml.html
 from lxml.cssselect import CSSSelector
-from lxml.etree import tostring
 from urllib.request import urlopen
 from urllib import parse
 from ebooklib import epub
@@ -44,17 +43,14 @@ class Chapter:
     
         return self.title
 
-    def get_text(self):
+    def get_text(self, callback=None):
         sel = CSSSelector(self.config.book.chapter.text_css_selector)
         match = sel(self.tree)
 
-        paragraphs = []
-        for p in match:
-            if len(p.cssselect('a')) == 0:
-                paragraphs.append(tostring(p, encoding='unicode'))
+        if callback is not None:
+            match = callback(match)
 
-
-        self.text_markup = ''.join(paragraphs)
+        self.text_markup = ''.join(match)
 
         return self.text_markup
 
@@ -62,14 +58,14 @@ class Chapter:
         return re.match(self.config.book.chapter.section_regex, self.get_title()).group(1)
 
     def get_epub_filename(self):
-        title = self.get_title()        
+        title = self.get_title()      
         remove = [' ', '#', '\t', ':', ' '] #the last one isnt a normal space...
         for c in remove:
             title = title.replace(c, '_')
         return title + '.xhtml'
 
-    def to_epub(self, css):
+    def to_epub(self, css, chapter_text_callback):
         epub_chapter = epub.EpubHtml(title=self.get_title(), file_name=self.get_epub_filename(), lang='hr')
-        epub_chapter.content='<html><body><h1>'+self.get_title()+'</h1>'+self.get_text()+'</body></html>'
+        epub_chapter.content='<html><body><h1>'+self.get_title()+'</h1>'+self.get_text(chapter_text_callback)+'</body></html>'
         epub_chapter.add_item(css)
         return epub_chapter

@@ -18,6 +18,7 @@ class BookConfig:
         self.epub_filename = yml['epub_filename']
         self.table_of_contents = TableOfContentsConfig(yml['table_of_contents'])
         self.chapter = ChapterConfig(yml['chapter'])
+        self.css_filename = yml['css_filename']
 
 class Config:
 

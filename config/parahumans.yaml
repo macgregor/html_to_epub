@@ -3,6 +3,7 @@ book:
     title: Parahumans - Worm
     author: Wildbow
     epub_filename: parahumans.epub
+    css_filename: 'kindle.css'
     table_of_contents:
         url: 'https://parahumans.wordpress.com/table-of-contents/'
         chapter_link_css_selector: 'div.entry-content a:not([href*="share"])'

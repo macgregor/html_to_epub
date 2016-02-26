@@ -13,6 +13,9 @@ class Book:
         self.title = config.book.title
         self.author = config.book.author
 
+        with open(config.book.css_filename, 'r') as css:
+            self.css = epub.EpubItem(uid='default', file_name="style/"+config.book.css_filename, media_type="text/css", content=css.read())
+
     def load_html(self):
         print('Loading table of contents html')
         self.toc.load_html()
@@ -30,13 +33,9 @@ class Book:
         self.book.add_author(self.author)
         
         #css
-        self.book.add_item(Book.get_css())
+        self.book.add_item(self.css)
 
-    def get_css(filename='kindle.css', uid='style_default'):
-        with open(filename, 'r') as css:
-            return epub.EpubItem(uid=uid, file_name="style/"+filename, media_type="text/css", content=css.read())
-
-    def generate_epub(self):
+    def generate_epub(self, chapter_text_callback):
         print('Initializing epub')
         self.init_epub()
 
@@ -49,7 +48,7 @@ class Book:
 
         print('Generate chapters')
         for chapter in tqdm(self.chapters):
-            epub_chapter = chapter.to_epub(Book.get_css())
+            epub_chapter = chapter.to_epub(self.css, chapter_text_callback)
 
             self.book.add_item(epub_chapter)
             self.book.spine.append(epub_chapter)
