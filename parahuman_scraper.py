@@ -6,7 +6,7 @@ from urllib.request import urlopen
 from urllib import parse
 from ebooklib import epub
 from tqdm import tqdm
-import pickle, uuid, re, os, traceback
+import pickle, uuid, re, os, traceback, optparse
 
 html_cache_location = './cache/html'
 pickle_cache = './cache/parahumans'
@@ -65,7 +65,14 @@ class Chapter:
         if self.tree is not None:
             sel = CSSSelector('div.entry-content p')
             match = sel(self.tree)
-            self.text_markup = ''.join(tostring(p, encoding='unicode', pretty_print=True) for p in match if len(p.getchildren()) == 0)
+
+            paragraphs = []
+            for p in match:
+                if len(p.cssselect('a')) == 0:
+                    paragraphs.append(tostring(p, encoding='unicode').replace('\n', '<br/>'))
+
+
+            self.text_markup = ''.join(paragraphs)
 
         return self.text_markup
 
@@ -73,7 +80,11 @@ class Chapter:
         return re.match(Chapter.section_regex, self.get_title()).group(1)
 
     def get_epub_filename(self):
-        return self.get_title().replace(' ', '_') + '.xhtml'
+        title = self.get_title()        
+        remove = [' ', '#', '\t', ':', ' '] #the last one isnt a normal space...
+        for c in remove:
+            title = title.replace(c, '_')
+        return title + '.xhtml'
 
     def to_epub(self, css):
         epub_chapter = epub.EpubHtml(title=self.get_title(), file_name=self.get_epub_filename(), lang='hr')
@@ -195,18 +206,28 @@ class Book:
         return self.book
         
 if __name__ == '__main__':
+    parser = optparse.OptionParser()
+    parser.add_option('-c', '--clear-cache', dest='clear', default = False, action = 'store_true', help='Set to download a local copy of the website, clears local cache if it exists')
+    parser.add_option('-a', '--author', dest='author', default='Wildbow', help='Author of ebook')
+    parser.add_option('-t', '--title', dest='title', default='Parahumans - Worm', help='Title of ebook')
+    parser.add_option('-u', '--url', dest='url', default='https://parahumans.wordpress.com/table-of-contents/', help='URL to the table of contents of the webpage to scrape')
+    parser.add_option('-o', '--output', dest='output', default='parahumans.epub', help='Epub file to output')
+
+    (options, args) = parser.parse_args()
+
     book = None
 
-    if os.path.isfile('./cache/parahumans'):
+    if os.path.isfile(pickle_cache):
         book = Book.restore()
-    else:
-        book = Book('https://parahumans.wordpress.com/table-of-contents/', 'Parahumans - Worm', 'Wildbow')
+
+    if options.clear or book is None:
+        book = Book(options.url, options.title, options.author)
         book.init_html()
         book.cache()
 
     try:
         # write to the file
-        epub.write_epub('parahumans.epub', book.generate_epub(), {})
+        epub.write_epub(options.output, book.generate_epub(), {})
     except Exception as e:
         print(traceback.format_exc())
         book.cache()
