@@ -7,31 +7,20 @@ from .chapter import Chapter
 from .table_of_contents import TableOfContents
 
 class Book:
-    def __init__(self, toc_url, title, author, pickle_cache_location, html_cache_location):
-        self.pickle_cache_location = pickle_cache_location
-        self.html_cache_location = html_cache_location
-        self.toc = TableOfContents(toc_url)
+    def __init__(self, config):
+        self.toc = TableOfContents(config)
         self.chapters = None
-        self.title = title
-        self.author = author
+        self.title = config.book.title
+        self.author = config.book.author
 
-    @classmethod
-    def restore(cls, pickle_cache_location):
-        with open(pickle_cache_location, 'rb') as f: 
-            return pickle.load(f)
-
-    def cache(self):
-        with open(self.cache_location, 'wb') as cache:
-            pickle.dump(self, cache)    
-
-    def init_html(self):
-        print('Scraping table of contents data from website')
-        self.toc.load_dom()
-        self.chapters = self.toc.get_chapters(self.html_cache_location)
+    def load_html(self):
+        print('Loading table of contents html')
+        self.toc.load_html()
+        self.chapters = self.toc.get_chapters()
         
-        print('Scraping chapter data from website')
+        print('Loading chapter html (this could take a while)')
         for chapter in tqdm(self.chapters):
-            chapter.save_html()
+            chapter.load_html()
 
     def init_epub(self):
         self.book = epub.EpubBook()
@@ -60,7 +49,6 @@ class Book:
 
         print('Generate chapters')
         for chapter in tqdm(self.chapters):
-            chapter.load_dom()
             epub_chapter = chapter.to_epub(Book.get_css())
 
             self.book.add_item(epub_chapter)
