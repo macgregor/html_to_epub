@@ -12,3 +12,4 @@ luck in that endevour, but I am not content to wait. Python to the rescue.
 * python3
 * ebooklib - https://github.com/aerkalov/ebooklib
 * lxml - https://github.com/lxml/lxml
+* tqdm - https://pypi.python.org/pypi/tqdm
