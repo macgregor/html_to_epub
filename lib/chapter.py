@@ -6,12 +6,15 @@ from ebooklib import epub
 import uuid, re, os, hashlib
 
 class Chapter:    
-    def __init__(self, url, config):
+    def __init__(self, url, config, debug=False):
         self.config = config
-        self.cache_filename = hashlib.md5(url.encode('utf-8')).hexdigest()+'.html'
+        self.debug = debug
+        self.cache_filename = os.path.join(self.config.cache, hashlib.md5(url.encode('utf-8')).hexdigest()+'.html')
         self.url = Chapter.clean_url(url)
         self.tree = None
         self.title = None
+        self.epub_section = None
+        self.epub_filename = None
         self.text_markup = None
 
     def clean_url(url):
@@ -22,17 +25,35 @@ class Chapter:
 
         return url
 
+    def __str__(self):
+        format_str = 'Chapter[\n\turl: {}\n\ttitle: {}\n\tepub_section: {}\n\tepub_filename: {}\n]'
+        return format_str.format(self.url, self.title, self.epub_section, self.epub_filename)
+
     def load_html(self):
-        if not os.path.isfile(os.path.join(self.config.cache, self.cache_filename)):
+        
+        if not os.path.isfile(self.cache_filename):
+            if self.debug:
+                print('Cache miss - Downloading ' + self.url + ' to ' + self.cache_filename)
+
             response = urlopen(self.url)
             content = response.read().decode('utf-8', 'ignore')
             response.close()
 
-            with open(os.path.join(self.config.cache, self.cache_filename), 'w') as out:
-                out.write(content)
+            with open(os.path.join(self.config.cache, self.cache_filename), 'w') as f:
+                f.write(content)
 
-        with open(os.path.join(self.config.cache, self.cache_filename), 'r') as f:
+        if self.debug:
+            print('Loading html dom from ' + self.cache_filename)
+
+        with open(self.cache_filename, 'r') as f:
             self.tree = lxml.html.fromstring(f.read())
+
+        self.get_title()
+        self.get_epub_section()
+        self.get_epub_filename()
+
+        if self.debug:
+            print(self)
 
         return self.tree
         
@@ -55,17 +76,24 @@ class Chapter:
         return self.text_markup
 
     def get_epub_section(self):
-        return re.match(self.config.book.chapter.section_regex, self.get_title()).group(1)
+        self.epub_section = re.match(self.config.book.chapter.section_regex, self.get_title()).group(1)
+
+        return self.epub_section
 
     def get_epub_filename(self):
         title = self.get_title()      
         remove = [' ', '#', '\t', ':', ' '] #the last one isnt a normal space...
         for c in remove:
             title = title.replace(c, '_')
-        return title + '.xhtml'
+
+        self.epub_filename = title + '.xhtml'
+        return self.epub_filename
 
     def to_epub(self, css, chapter_text_callback):
-        epub_chapter = epub.EpubHtml(title=self.get_title(), file_name=self.get_epub_filename(), lang='hr')
-        epub_chapter.content='<html><body><h1>'+self.get_title()+'</h1>'+self.get_text(chapter_text_callback)+'</body></html>'
+        chapter_title = self.get_title()
+
+        epub_chapter = epub.EpubHtml(title=chapter_title, file_name=self.get_epub_filename(), lang='hr')
+        epub_chapter.content='<html><body><h1>'+chapter_title+'</h1>'+self.get_text(chapter_text_callback)+'</body></html>'
         epub_chapter.add_item(css)
+
         return epub_chapter

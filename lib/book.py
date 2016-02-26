@@ -7,8 +7,8 @@ from .chapter import Chapter
 from .table_of_contents import TableOfContents
 
 class Book:
-    def __init__(self, config):
-        self.toc = TableOfContents(config)
+    def __init__(self, config, debug=False):
+        self.toc = TableOfContents(config, debug)
         self.chapters = None
         self.title = config.book.title
         self.author = config.book.author

@@ -15,6 +15,7 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('-c', '--clear-cache', dest='clear', default = False, action = 'store_true', help='Set to download a local copy of the website, clears local cache if it exists')
     parser.add_option('--config', dest='config', help='yaml config file')
+    parser.add_option('-d', '--debug', dest='debug', default=False, action='store_true', help='enable debug output')
     (options, args) = parser.parse_args()
 
     config = Config(options.config)
@@ -24,11 +25,10 @@ if __name__ == '__main__':
 
     os.makedirs(config.cache, exist_ok=True)
 
-    book = Book(config)
+    book = Book(config, options.debug)
     book.load_html()
 
     try:
-        # write to the file
         epub.write_epub(config.book.epub_filename, book.generate_epub(chapter_text_callback), {})
     except Exception as e:
         print(traceback.format_exc())

@@ -9,8 +9,9 @@ from .chapter import Chapter
 
 class TableOfContents:
     
-    def __init__(self, config):
+    def __init__(self, config, debug=False):
         self.config = config
+        self.debug = debug
         self.tree = None
         self.chapters = None     
  
@@ -31,7 +32,7 @@ class TableOfContents:
                 href = 'https://' + href
 
             if href not in chapters:
-                chapters[href] = Chapter(href, self.config)
+                chapters[href] = Chapter(href, self.config, self.debug)
         self.chapters = list(chapters.values())
 
         return self.chapters
