@@ -1,15 +1,9 @@
 from ebooklib import epub
-from lxml.etree import tostring
 from lib.book import Book
+from lib.chapter import Chapter
 from lib.config import Config
+from books.parahumans.parahumans import ParahumansHtmlCallbacks
 import optparse, os, traceback, shutil, logging, sys
-
-def chapter_text_callback(matches):
-    paragraphs = []
-    for p in matches:
-        if len(p.cssselect('a')) == 0:
-            paragraphs.append(tostring(p, encoding='unicode'))
-    return paragraphs
 
 def parse_options():
     parser = optparse.OptionParser()
@@ -47,10 +41,10 @@ if __name__ == '__main__':
 
     os.makedirs(config.cache, exist_ok=True)
 
-    book = Book(config)
+    book = Book(config, ParahumansHtmlCallbacks(config))
     book.load_html()
 
     try:
-        epub.write_epub(config.book.epub_filename, book.generate_epub(chapter_text_callback), {})
+        epub.write_epub(config.book.epub_filename, book.generate_epub(), {})
     except Exception as e:
         print(traceback.format_exc())
