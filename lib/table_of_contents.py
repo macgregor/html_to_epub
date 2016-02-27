@@ -1,23 +1,23 @@
 import lxml.html
 from lxml.cssselect import CSSSelector
 from collections import OrderedDict
-from urllib.request import urlopen
 from tqdm import tqdm
 import yaml, logging
 
 from .chapter import Chapter
+from .util import Network
 
 class TableOfContents:
     
     def __init__(self, config):
         self.config = config
+        self.url = Network.clean_url(config.book.table_of_contents.url)
+        self.cache_filename = Network.cache_filename(self.config.cache, self.url)
         self.tree = None
         self.chapters = None     
  
     def load_html(self):
-        response = urlopen(self.config.book.table_of_contents.url)
-        self.tree = lxml.html.fromstring(response.read().decode('utf-8', 'ignore'))
-        response.close()
+        self.tree = Network.load_and_cache_html(self.url, self.cache_filename)
 
         return self.tree
 

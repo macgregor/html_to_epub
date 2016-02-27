@@ -1,49 +1,26 @@
-import lxml.html
 from lxml.cssselect import CSSSelector
-from urllib.request import urlopen
-from urllib import parse
 from ebooklib import epub
-import uuid, re, os, hashlib, logging
+import uuid, re, logging
+
+from .util import Network
 
 class Chapter:    
     def __init__(self, url, config):
         self.config = config
-        self.cache_filename = os.path.join(self.config.cache, hashlib.md5(url.encode('utf-8')).hexdigest()+'.html')
-        self.url = Chapter.clean_url(url)
+        self.url = Network.clean_url(url)
+        self.cache_filename = Network.cache_filename(self.config.cache, self.url)
         self.tree = None
         self.title = None
         self.epub_section = None
         self.epub_filename = None
         self.text_markup = None
 
-    def clean_url(url):
-        url = parse.urlsplit(url)
-        url = list(url)
-        url[2] = parse.quote(url[2])
-        url = parse.urlunsplit(url)
-
-        return url
-
     def __str__(self):
         format_str = '\nChapter{{\n  url: {}\n  title: {}\n  epub_section: {}\n  epub_filename: {}\n}}'
         return format_str.format(self.url, self.title, self.epub_section, self.epub_filename)
 
     def load_html(self):
-        
-        if not os.path.isfile(self.cache_filename):
-            logging.getLogger().debug('Cache miss - Downloading ' + self.url + ' to ' + self.cache_filename)
-
-            response = urlopen(self.url)
-            content = response.read().decode('utf-8', 'ignore')
-            response.close()
-
-            with open(os.path.join(self.config.cache, self.cache_filename), 'w') as f:
-                f.write(content)
-
-        logging.getLogger().debug('Loading html dom from ' + self.cache_filename)
-
-        with open(self.cache_filename, 'r') as f:
-            self.tree = lxml.html.fromstring(f.read())
+        self.tree = Network.load_and_cache_html(self.url, self.cache_filename)
 
         self.get_title()
         self.get_epub_section()
