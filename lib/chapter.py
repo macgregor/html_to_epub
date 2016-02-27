@@ -1,12 +1,14 @@
 from lxml.cssselect import CSSSelector
+from lxml.etree import tostring
 from ebooklib import epub
-import uuid, re, logging
+import uuid, logging
 
 from .util import Network
 
 class Chapter:    
-    def __init__(self, url, config):
+    def __init__(self, url, config, htmlCallbacks):
         self.config = config
+        self.htmlCallbacks = htmlCallbacks
         self.url = Network.clean_url(url)
         self.cache_filename = Network.cache_filename(self.config.cache, self.url)
         self.tree = None
@@ -31,25 +33,26 @@ class Chapter:
         return self.tree
         
     def get_title(self):
-        sel = CSSSelector(self.config.book.chapter.title_css_selector)
-        for t in sel(self.tree):
-            self.title = t.text
+        match = CSSSelector(self.config.book.chapter.title_css_selector)
+        self.title = self.htmlCallbacks.chapter_title_callback(match(self.tree))
     
         return self.title
 
-    def get_text(self, callback=None):
-        sel = CSSSelector(self.config.book.chapter.text_css_selector)
-        match = sel(self.tree)
+    def get_text(self):
+        match = CSSSelector(self.config.book.chapter.text_css_selector)
 
-        if callback is not None:
-            match = callback(match)
+        paragraphs = []
+        for p in match(self.tree):
+            p = self.htmlCallbacks.chapter_text_callback(p)
+            if p is not None:
+                paragraphs.append(tostring(p, encoding='unicode'))
 
-        self.text_markup = ''.join(match)
-
-        return self.text_markup
+        return ''.join(paragraphs)
 
     def get_epub_section(self):
-        self.epub_section = re.match(self.config.book.chapter.section_regex, self.get_title()).group(1)
+        match = CSSSelector(self.config.book.chapter.section_css_selector)
+
+        self.epub_section = self.htmlCallbacks.chapter_section_callback(match(self.tree))
 
         return self.epub_section
 
@@ -62,11 +65,11 @@ class Chapter:
         self.epub_filename = title + '.xhtml'
         return self.epub_filename
 
-    def to_epub(self, css, chapter_text_callback):
+    def to_epub(self, css):
         chapter_title = self.get_title()
 
         epub_chapter = epub.EpubHtml(title=chapter_title, file_name=self.get_epub_filename(), lang='hr')
-        epub_chapter.content='<html><body><h1>'+chapter_title+'</h1>'+self.get_text(chapter_text_callback)+'</body></html>'
+        epub_chapter.content='<html><body><h1>'+chapter_title+'</h1>'+self.get_text()+'</body></html>'
         epub_chapter.add_item(css)
 
         return epub_chapter

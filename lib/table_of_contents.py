@@ -9,29 +9,28 @@ from .util import Network
 
 class TableOfContents:
     
-    def __init__(self, config):
+    def __init__(self, config, htmlCallbacks):
         self.config = config
+        self.htmlCallbacks = htmlCallbacks
         self.url = Network.clean_url(config.book.table_of_contents.url)
         self.cache_filename = Network.cache_filename(self.config.cache, self.url)
         self.tree = None
-        self.chapters = None     
  
     def load_html(self):
         self.tree = Network.load_and_cache_html(self.url, self.cache_filename)
 
-        return self.tree
-
     def get_chapters(self):
         chapters = OrderedDict()
-        sel = CSSSelector(self.config.book.table_of_contents.chapter_link_css_selector)
+        match = CSSSelector(self.config.book.table_of_contents.chapter_link_css_selector)
 
-        for link in tqdm(sel(self.tree), disable=self.config.debug):
-            href = link.get('href')
-            if not href.startswith('https://'):
-                href = 'https://' + href
+        chapters = OrderedDict()
 
-            if href not in chapters:
-                chapters[href] = Chapter(href, self.config)
-        self.chapters = list(chapters.values())
+        for link in tqdm(match(self.tree), disable=self.config.debug):
+            link = self.htmlCallbacks.toc_chapters_callback(link)
+            
+            chapter = Chapter(link.get('href'), self.config, self.htmlCallbacks)
 
-        return self.chapters
+            if chapter is not None and chapter.url not in chapters:
+                chapters[link.get('href')] = chapter
+
+        return list(chapters.values())

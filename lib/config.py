@@ -12,10 +12,10 @@ class ChapterConfig:
     def __init__(self, yml):
         self.title_css_selector = yml['title_css_selector']
         self.text_css_selector = yml['text_css_selector']
-        self.section_regex = yml['section_regex']
+        self.section_css_selector = yml['section_css_selector']
 
     def __str__(self):
-        return "    Chapter{{\n      title_css_selector: '{}'\n      text_css_selector: '{}'\n      section_regex: '{}'\n    }}".format(self.title_css_selector, self.text_css_selector, self.section_regex)
+        return "    Chapter{{\n      title_css_selector: '{}'\n      text_css_selector: '{}'\n      section_css_selector: '{}'\n    }}".format(self.title_css_selector, self.text_css_selector, self.section_css_selector)
 
 class BookConfig:
     def __init__(self, yml):

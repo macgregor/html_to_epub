@@ -7,6 +7,7 @@ class Network:
     def __init__():
         pass    
 
+    @staticmethod
     def clean_url(url):
         url = parse.urlsplit(url)
         url = list(url)
@@ -15,9 +16,11 @@ class Network:
 
         return url
 
+    @staticmethod
     def cache_filename(cache_dir, url):
         return os.path.join(cache_dir, hashlib.md5(url.encode('utf-8')).hexdigest()+'.html')
 
+    @staticmethod
     def load_and_cache_html(url, cache_filename):
         
         if not os.path.isfile(cache_filename):

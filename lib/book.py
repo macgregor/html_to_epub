@@ -9,9 +9,9 @@ from .table_of_contents import TableOfContents
 global debug
 
 class Book:
-    def __init__(self, config):
+    def __init__(self, config, htmlCallbacks):
         self.config = config
-        self.toc = TableOfContents(config)
+        self.toc = TableOfContents(config, htmlCallbacks)
         self.chapters = None
         self.title = config.book.title
         self.author = config.book.author
@@ -38,7 +38,7 @@ class Book:
         #css
         self.book.add_item(self.css)
 
-    def generate_epub(self, chapter_text_callback):
+    def generate_epub(self):
         logging.getLogger().info('Initializing epub')
         self.init_epub()
 
@@ -51,7 +51,7 @@ class Book:
 
         logging.getLogger().info('Generate chapters')
         for chapter in tqdm(self.chapters, disable=self.config.debug):
-            epub_chapter = chapter.to_epub(self.css, chapter_text_callback)
+            epub_chapter = chapter.to_epub(self.css)
 
             self.book.add_item(epub_chapter)
             self.book.spine.append(epub_chapter)
