@@ -1,14 +1,17 @@
 from collections import OrderedDict
 from ebooklib import epub
 from tqdm import tqdm
-import pickle, uuid, yaml
+import pickle, uuid, yaml, logging
 
 from .chapter import Chapter
 from .table_of_contents import TableOfContents
 
+global debug
+
 class Book:
-    def __init__(self, config, debug=False):
-        self.toc = TableOfContents(config, debug)
+    def __init__(self, config):
+        self.config = config
+        self.toc = TableOfContents(config)
         self.chapters = None
         self.title = config.book.title
         self.author = config.book.author
@@ -17,12 +20,12 @@ class Book:
             self.css = epub.EpubItem(uid='default', file_name="style/"+config.book.css_filename, media_type="text/css", content=css.read())
 
     def load_html(self):
-        print('Loading table of contents html')
+        logging.getLogger().info('Loading table of contents html')
         self.toc.load_html()
         self.chapters = self.toc.get_chapters()
         
-        print('Loading chapter html (this could take a while)')
-        for chapter in tqdm(self.chapters):
+        logging.getLogger().info('Loading chapter html (this could take a while)')
+        for chapter in tqdm(self.chapters, disable=self.config.debug):
             chapter.load_html()
 
     def init_epub(self):
@@ -36,7 +39,7 @@ class Book:
         self.book.add_item(self.css)
 
     def generate_epub(self, chapter_text_callback):
-        print('Initializing epub')
+        logging.getLogger().info('Initializing epub')
         self.init_epub()
 
         #spine is used when navigating forward and backward through the epub
@@ -46,8 +49,8 @@ class Book:
         sections = OrderedDict()
         current_section = None
 
-        print('Generate chapters')
-        for chapter in tqdm(self.chapters):
+        logging.getLogger().info('Generate chapters')
+        for chapter in tqdm(self.chapters, disable=self.config.debug):
             epub_chapter = chapter.to_epub(self.css, chapter_text_callback)
 
             self.book.add_item(epub_chapter)
@@ -63,10 +66,10 @@ class Book:
                 sections[epub_section] = []
             sections[epub_section].append(epub_chapter)
 
-        print('Generating table of contents')
-        self.book.toc = [(epub.Section(section), tuple(chapters)) for section, chapters in tqdm(sections.items())]
+        logging.getLogger().info('Generating table of contents')
+        self.book.toc = [(epub.Section(section), tuple(chapters)) for section, chapters in tqdm(sections.items(), disable=self.config.debug)]
         self.book.add_item(epub.EpubNcx())
         self.book.add_item(epub.EpubNav())
 
-        print('Finished genetaring ebook')
+        logging.getLogger().info('Finished genetaring ebook')
         return self.book

@@ -3,12 +3,11 @@ from lxml.cssselect import CSSSelector
 from urllib.request import urlopen
 from urllib import parse
 from ebooklib import epub
-import uuid, re, os, hashlib
+import uuid, re, os, hashlib, logging
 
 class Chapter:    
-    def __init__(self, url, config, debug=False):
+    def __init__(self, url, config):
         self.config = config
-        self.debug = debug
         self.cache_filename = os.path.join(self.config.cache, hashlib.md5(url.encode('utf-8')).hexdigest()+'.html')
         self.url = Chapter.clean_url(url)
         self.tree = None
@@ -26,14 +25,13 @@ class Chapter:
         return url
 
     def __str__(self):
-        format_str = 'Chapter[\n\turl: {}\n\ttitle: {}\n\tepub_section: {}\n\tepub_filename: {}\n]'
+        format_str = '\nChapter{{\n  url: {}\n  title: {}\n  epub_section: {}\n  epub_filename: {}\n}}'
         return format_str.format(self.url, self.title, self.epub_section, self.epub_filename)
 
     def load_html(self):
         
         if not os.path.isfile(self.cache_filename):
-            if self.debug:
-                print('Cache miss - Downloading ' + self.url + ' to ' + self.cache_filename)
+            logging.getLogger().debug('Cache miss - Downloading ' + self.url + ' to ' + self.cache_filename)
 
             response = urlopen(self.url)
             content = response.read().decode('utf-8', 'ignore')
@@ -42,8 +40,7 @@ class Chapter:
             with open(os.path.join(self.config.cache, self.cache_filename), 'w') as f:
                 f.write(content)
 
-        if self.debug:
-            print('Loading html dom from ' + self.cache_filename)
+        logging.getLogger().debug('Loading html dom from ' + self.cache_filename)
 
         with open(self.cache_filename, 'r') as f:
             self.tree = lxml.html.fromstring(f.read())
@@ -52,8 +49,7 @@ class Chapter:
         self.get_epub_section()
         self.get_epub_filename()
 
-        if self.debug:
-            print(self)
+        logging.getLogger().debug(self)
 
         return self.tree
         

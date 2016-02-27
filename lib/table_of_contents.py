@@ -3,15 +3,14 @@ from lxml.cssselect import CSSSelector
 from collections import OrderedDict
 from urllib.request import urlopen
 from tqdm import tqdm
-import yaml
+import yaml, logging
 
 from .chapter import Chapter
 
 class TableOfContents:
     
-    def __init__(self, config, debug=False):
+    def __init__(self, config):
         self.config = config
-        self.debug = debug
         self.tree = None
         self.chapters = None     
  
@@ -26,13 +25,13 @@ class TableOfContents:
         chapters = OrderedDict()
         sel = CSSSelector(self.config.book.table_of_contents.chapter_link_css_selector)
 
-        for link in tqdm(sel(self.tree)):
+        for link in tqdm(sel(self.tree), disable=self.config.debug):
             href = link.get('href')
             if not href.startswith('https://'):
                 href = 'https://' + href
 
             if href not in chapters:
-                chapters[href] = Chapter(href, self.config, self.debug)
+                chapters[href] = Chapter(href, self.config)
         self.chapters = list(chapters.values())
 
         return self.chapters
