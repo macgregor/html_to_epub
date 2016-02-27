@@ -1,5 +1,5 @@
-# parahumans_scraper
-A python script to convert a blog published web series into a Kindle friendly epub.
+# html_to_epub
+A python script to convert a blog published ebook into a Kindle friendly epub.
 
 
 #About
@@ -14,6 +14,12 @@ luck in that endevour, but I am not content to wait. Python to the rescue.
 * lxml - https://github.com/lxml/lxml
 * tqdm - https://pypi.python.org/pypi/tqdm
 
+
+#Running 
+```bash
+python html_to_epub.py --help
+python html_to_epub.py --config books/parahumans/config.yaml
+```
 
 #Config
 Disclaimer: I have only used this on a single website (https://parahumans.wordpress.com/) so there are probably a million nuances that will break this for other websites
@@ -61,6 +67,7 @@ structures required by the epub standard. This needs to uniquely identify an ele
 
 ##chapter.section_css_selector
 Similar to the title css selector. Used when building the ebooks table of contents to group related chapters.
+
 1. Introduction
   1. Chapter 1
   2. Chapter 2
@@ -75,7 +82,7 @@ CSS selector used to identify the chapter body on the web page.
 
 
 ##CSS Selector Limitations
-Soemtimes the css selecot doesnt quite get the job done. In these situations you can extend the [HtmlCallbacks](lib/callbacks.py) class to have the program execute custom logic after running the css selector.
+Soemtimes the css selector doesnt quite get the job done. In these situations you can extend the [HtmlCallbacks](lib/callbacks.py) class to have the program execute custom logic after running the css selector.
 the HtmlCallback base class has documentation on the expectations for how to use these functions you can see an example below
 ```python
 from lib.callbacks import HtmlCallbacks
