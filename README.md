@@ -21,7 +21,7 @@ Disclaimer: I have only used this on a single website (https://parahumans.wordpr
 
 That said, I designed it to be as generic as possible. If you have a (very) well structured website and you are good with css selectors you could turn a website 
 into an epub with a simple yaml file like this one:
-``` yaml [books/parahumans/config.yaml](books/parahumans/config.yaml)
+```yaml
 cache: './cache/html'
 book:
     title: Parahumans - Worm
@@ -77,7 +77,7 @@ CSS selector used to identify the chapter body on the web page.
 ##CSS Selector Limitations
 Soemtimes the css selecot doesnt quite get the job done. In these situations you can extend the [HtmlCallbacks](lib/callbacks.py) class to have the program execute custom logic after running the css selector.
 the HtmlCallback base class has documentation on the expectations for how to use these functions you can see an example below
-``` python [books/parahumans/parahumans.py](books/parahumans/parahumans.py)
+```python
 from lib.callbacks import HtmlCallbacks
 import re
 
@@ -116,7 +116,7 @@ class ParahumansHtmlCallbacks(HtmlCallbacks):
         return re.match(section_regex, title).group(1)
 ```
 We then include this in [html_to_epub.py](html_to_epub.py)
-``` python [html_to_epub.py](html_to_epub.py)
+```python
 from books.parahumans.parahumans import ParahumansHtmlCallbacks
 
 if __name__ == '__main__':
