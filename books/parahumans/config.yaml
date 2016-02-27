@@ -2,12 +2,12 @@ cache: './cache/html'
 book:
     title: Parahumans - Worm
     author: Wildbow
-    epub_filename: parahumans.epub
+    epub_filename: ./books/parahumans/parahumans.epub
     css_filename: 'kindle.css'
     table_of_contents:
         url: 'https://parahumans.wordpress.com/table-of-contents/'
         chapter_link_css_selector: 'div.entry-content a:not([href*="share"])'
     chapter:
         title_css_selector: 'h1.entry-title a, h1.entry-title'
+        section_css_selector: 'h1.entry-title a, h1.entry-title'
         text_css_selector: 'div.entry-content p'
-        section_regex: '^(\w+)\s*.*$'
