@@ -22,13 +22,14 @@ python html_to_epub.py --config books/parahumans/config.yaml
 ```
 
 #Config
-Disclaimer: I have only used this on a single website (https://parahumans.wordpress.com/) so there are probably a million nuances that will break this for other websites
+Disclaimer: I have only used this on a websites so there are probably a million nuances that will break this for other websites
 
 
 That said, I designed it to be as generic as possible. If you have a (very) well structured website and you are good with css selectors you could turn a website 
 into an epub with a simple yaml file like this one:
 ```yaml
 cache: './cache/html'
+callbacks: 'books.parahumans.parahumans.ParahumansCallbacks'
 book:
     title: Parahumans - Worm
     author: Wildbow
@@ -44,51 +45,29 @@ book:
 ```
 
 
-The interesting parts are the table_or_contents url and the various css selectors. The table_of_contents url is the entry point. We go here and get an ordered list
-of urls for each chapter of the ebook. CSS selectors are used to identify what we care about on a page.
+Some interesting things to note in the config are cache, callbacks and the various css selectors. More on these below. The table_of_contents url is the entry point. We go here and get an ordered list
+of urls for each chapter of the ebook. CSS selectors are used to identify what we care about on a page, with optional callback hooks to further parse html elements in python.
+The css selectors are lxml selectors which are compiled to xpaths under the hood. They implement the vast magority of css selector features but there are limitations I ran in to
+during testing, though I have having trouble finding a concise explanation of the limitations right now.
 
 
 ##cache
-The first time we visit a webpage, it is cached locally. Future runs will use the cache file unless you run with the --clear-cache flag
+The first time we visit a webpage, it is cached locally. Future runs will use the cache file unless you run with the `--clear-cache` flag. The directory will be created if it does not exist
+but there is no expiration or cleanup done by the script unless explicitly ran with the `--clear-cache` flag
 
 
-##table_of_contents.url
-The entry point on the website for building the ebook. This page should have an ordered list of chapter urls we can use to navigate the rest of the site.
+##callbacks
+The location of a python class which implements the [Callbacks](lib/callbacks.py) base class. This string is used to dynamically import your python module and should be
+the module path followed by the class name. The file must be in this python module. See [AnathemaCallbacks](books/anathema/anathema.py) and [ParahumanCallbacks](book/parahumans/parahumans.py)
+for examples. Sane defaults have been provided in the [Callbacks](lib/callbacks.py) base class, you only need to override a method if you need futher control of the html parsing. 
+Web pages are often a mess and can become a nightmare, if not downright impossible, to parse with pure css selectors.
 
 
-##table_of_contents.chapter_link_css_selector
-CSS Selector used on the table of contents page to identify links to turn into chapters.
-
-
-##chapter.title_css_selector
-CSS selector used on each chapter on the table of contents page to identify the title of the chapter. This is put into the chapter body of the epub as a header and also used when building the navigational
-structures required by the epub standard. This needs to uniquely identify an element for the title, by default it will use the text of the first match it finds if there are multiple.
-
-
-##chapter.section_css_selector
-Similar to the title css selector. Used when building the ebooks table of contents to group related chapters.
-
-1. Introduction
-  1. Chapter 1
-  2. Chapter 2
-2. Epilogue
-  1. Chapter 3
-  2. Chapter 3
-Introduction and Epilogue would be the sections while chapter 1-4 would be the titles. Like the title, this needs to be uniquely identifiable.
-
-
-##chapter.text_css_selector
-CSS selector used to identify the chapter body on the web page. 
-
-
-##CSS Selector Limitations
-Soemtimes the css selector doesnt quite get the job done. In these situations you can extend the [HtmlCallbacks](lib/callbacks.py) class to have the program execute custom logic after running the css selector.
-the HtmlCallback base class has documentation on the expectations for how to use these functions you can see an example below
 ```python
-from lib.callbacks import HtmlCallbacks
+from lib.callbacks import Callbacks
 import re
 
-class ParahumansHtmlCallbacks(HtmlCallbacks):
+class ParahumansCallbacks(Callbacks):
 
     def __init__(self, config):
         self.config = config
@@ -122,22 +101,41 @@ class ParahumansHtmlCallbacks(HtmlCallbacks):
         title = self.chapter_title_callback(selector_matches)
         return re.match(section_regex, title).group(1)
 ```
-We then include this in [html_to_epub.py](html_to_epub.py)
-```python
-from books.parahumans.parahumans import ParahumansHtmlCallbacks
-
-if __name__ == '__main__':
-    ...
-    book = Book(config, ParahumansHtmlCallbacks(config))
-    book.load_html()
-
-    try:
-        epub.write_epub(config.book.epub_filename, book.generate_epub(), {})
-    except Exception as e:
-        print(traceback.format_exc())
-```
 
 
-#Future Improvements
-As I find more web sites I want to ebookify Im sure I'll find holes to fill. Id love to not have to write any custom python. lxml uses xpaths under the hood which I might be able to get more precise with
-but no one likes writing xpaths either. I'm fine with this for now. Time to go read my book.
+##table_of_contents.url
+The entry point on the website for building the ebook. This page should have an ordered list of chapter urls we can use to navigate the rest of the site. By defaults the order the urls
+appear on this page will be the order they appear in the ebook. This behavior can be overridden by overriding `Callbacks.sort_chapters()`
+
+
+##table_of_contents.chapter_link_css_selector
+CSS Selector used on the table of contents page to identify links to turn into chapters.
+
+
+##chapter.title_css_selector
+CSS selector used on each chapter on the table of contents page to identify the title of the chapter. This is put into the chapter body of the epub as a header and also used when building the navigational
+structures required by the epub standard. This needs to uniquely identify an element for the title, by default it will use the text of the first match it finds if there are multiple.
+
+
+##chapter.section_css_selector
+Similar to the title css selector. Used when building the ebooks table of contents to group related chapters.
+
+1. Introduction
+  1. Chapter 1
+  2. Chapter 2
+2. Epilogue
+  1. Chapter 3
+  2. Chapter 3
+Introduction and Epilogue would be the sections while chapter 1-4 would be the titles. Like the title, this needs to be uniquely identifiable. 
+
+
+This can be a huge pain in the ass and isnt always applicable so I plan on making this optional in the future.
+
+
+##chapter.text_css_selector
+CSS selector used to identify the chapter body on the web page.
+
+
+##css_filename
+The css file used for styling the epub. I've included a default style sheet that makes books look decent in general, though it is desiged for the Kindle specifically. Feel free to provide your own, just
+change this to a relative or absolute path to the file.

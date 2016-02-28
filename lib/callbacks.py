@@ -77,5 +77,16 @@ class Callbacks(object, metaclass=ABCMeta):
         selector_match.set('href', href)
         return selector_match
 
+    '''
+    Callback function executed after html parsing is complete, before generating the epub. Override to implement
+    a custom sorting of the chapters based on whatever criteria you want rather than the default order found on
+    the table of contents web page.
+
+    parameters:
+        chapters - list of chapter objects
+
+    returns:
+        list of chapter objects
+    '''
     def sort_chapters(self, chapters):
         return chapters
