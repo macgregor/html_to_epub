@@ -6,9 +6,9 @@ import uuid, logging
 from .util import Network
 
 class Chapter:    
-    def __init__(self, url, config, htmlCallbacks):
+    def __init__(self, url, config, callbacks):
         self.config = config
-        self.htmlCallbacks = htmlCallbacks
+        self.callbacks = callbacks
         self.url = Network.clean_url(url)
         self.cache_filename = Network.cache_filename(self.config.cache, self.url)
         self.tree = None
@@ -34,7 +34,7 @@ class Chapter:
         
     def get_title(self):
         match = CSSSelector(self.config.book.chapter.title_css_selector)
-        self.title = self.htmlCallbacks.chapter_title_callback(match(self.tree))
+        self.title = self.callbacks.chapter_title_callback(match(self.tree))
     
         return self.title
 
@@ -43,7 +43,7 @@ class Chapter:
 
         paragraphs = []
         for p in match(self.tree):
-            p = self.htmlCallbacks.chapter_text_callback(p)
+            p = self.callbacks.chapter_text_callback(p)
             if p is not None:
                 paragraphs.append(tostring(p, encoding='unicode'))
 
@@ -52,7 +52,7 @@ class Chapter:
     def get_epub_section(self):
         match = CSSSelector(self.config.book.chapter.section_css_selector)
 
-        self.epub_section = self.htmlCallbacks.chapter_section_callback(match(self.tree))
+        self.epub_section = self.callbacks.chapter_section_callback(match(self.tree))
 
         return self.epub_section
 
@@ -73,3 +73,27 @@ class Chapter:
         epub_chapter.add_item(css)
 
         return epub_chapter
+
+class ChapterMock(Chapter):
+    def __init__(self, url, config, callbacks):
+        super().__init__(url, config, callbacks)
+        self.id = str(uuid.uuid4())
+
+    def load_html(self):
+        self.get_title()
+        self.get_epub_section()
+        self.get_epub_filename()
+
+        logging.getLogger().debug(self)
+
+    def get_title(self):
+        self.title = 'Mock title ' + self.id
+        return self.title
+
+    def get_text(self):
+        self.text = '<p>mock chapter body '+self.id+'</p>'
+        return self.text
+
+    def get_epub_section(self):
+        self.epub_section = 'Mock Section'
+        return self.epub_section

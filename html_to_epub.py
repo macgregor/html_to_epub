@@ -34,8 +34,8 @@ def get_html_callback_class(callback_config_str):
         class_name = callback_config_str.split('.')[-1]
         mod = __import__(package, fromlist=[class_name])
     else:
-        mod = __import__('lib.callbacks', fromlist=['HtmlCallbacks'])
-        class_name = 'HtmlCallbacks'
+        mod = __import__('lib.callbacks', fromlist=['Callbacks'])
+        class_name = 'Callbacks'
 
     return getattr(mod, class_name)
 

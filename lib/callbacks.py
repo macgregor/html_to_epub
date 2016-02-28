@@ -10,10 +10,10 @@ the yaml configuration file.
 Some methods are called on each element that matches a selector, others are called once with all elements that match
 a selector. Read the description of each method carefully for what inputs and outputs to expect.
 '''
-class HtmlCallbacks(object, metaclass=ABCMeta):
+class Callbacks(object, metaclass=ABCMeta):
 
     def __init__(self):
-        logging.getLogger().debug('Instantiating HtmlCallbacks class')
+        logging.getLogger().debug('Instantiating Callbacks class')
 
     '''
     Callback funtion executed on the result of the css selector in Chapter.get_epub_section(). The section
@@ -76,3 +76,6 @@ class HtmlCallbacks(object, metaclass=ABCMeta):
             href = 'https://' + href
         selector_match.set('href', href)
         return selector_match
+
+    def sort_chapters(self, chapters):
+        return chapters

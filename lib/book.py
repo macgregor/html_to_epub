@@ -9,9 +9,10 @@ from .table_of_contents import TableOfContents
 global debug
 
 class Book:
-    def __init__(self, config, htmlCallbacks):
+    def __init__(self, config, callbacks):
         self.config = config
-        self.toc = TableOfContents(config, htmlCallbacks)
+        self.callbacks = callbacks
+        self.toc = TableOfContents(config, callbacks)
         self.chapters = []
         self.title = config.book.title
         self.author = config.book.author
@@ -27,6 +28,8 @@ class Book:
         logging.getLogger().info('Loading chapter html (this could take a while)')
         for chapter in tqdm(self.chapters, disable=self.config.debug):
             chapter.load_html()
+
+        self.chapters = self.callbacks.sort_chapters(self.chapters)
 
     def init_epub(self):
         self.book = epub.EpubBook()

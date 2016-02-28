@@ -9,9 +9,9 @@ from .util import Network
 
 class TableOfContents:
     
-    def __init__(self, config, htmlCallbacks):
+    def __init__(self, config, callbacks):
         self.config = config
-        self.htmlCallbacks = htmlCallbacks
+        self.callbacks = callbacks
         self.url = Network.clean_url(config.book.table_of_contents.url)
         self.cache_filename = Network.cache_filename(self.config.cache, self.url)
         self.tree = None
@@ -26,13 +26,13 @@ class TableOfContents:
         chapters = OrderedDict()
 
         for link in tqdm(match(self.tree), disable=self.config.debug):
-            link = self.htmlCallbacks.toc_chapters_callback(link)
+            link = self.callbacks.toc_chapters_callback(link)
             
 
             if not self.config.toc_break:
-                chapter = Chapter(link.get('href'), self.config, self.htmlCallbacks)
+                chapter = Chapter(link.get('href'), self.config, self.callbacks)
             else:
-                chapter = ChapterMock(link.get('href'), self.config, self.htmlCallbacks)
+                chapter = ChapterMock(link.get('href'), self.config, self.callbacks)
 
             if chapter is not None and chapter.url not in chapters:
                 chapters[link.get('href')] = chapter
