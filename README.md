@@ -22,7 +22,7 @@ python html_to_epub.py --config books/parahumans/config.yaml
 ```
 
 #Config
-Disclaimer: I have only used this on a websites so there are probably a million nuances that will break this for other websites
+Disclaimer: I have only used this on a couple websites so there are probably a million nuances that will break this for other websites
 
 
 That said, I designed it to be as generic as possible. If you have a (very) well structured website and you are good with css selectors you could turn a website 
@@ -48,7 +48,7 @@ book:
 Some interesting things to note in the config are cache, callbacks and the various css selectors. More on these below. The table_of_contents url is the entry point. We go here and get an ordered list
 of urls for each chapter of the ebook. CSS selectors are used to identify what we care about on a page, with optional callback hooks to further parse html elements in python.
 The css selectors are lxml selectors which are compiled to xpaths under the hood. They implement the vast magority of css selector features but there are limitations I ran in to
-during testing, though I have having trouble finding a concise explanation of the limitations right now.
+during testing, though I am have having trouble finding a concise explanation of the limitations right now.
 
 
 ##cache
@@ -126,6 +126,7 @@ Similar to the title css selector. Used when building the ebooks table of conten
 2. Epilogue
   1. Chapter 3
   2. Chapter 3
+
 Introduction and Epilogue would be the sections while chapter 1-4 would be the titles. Like the title, this needs to be uniquely identifiable. 
 
 
