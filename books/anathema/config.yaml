@@ -1,5 +1,5 @@
 cache: './cache/html/anathema'
-html_callbacks: 'books.anathema.anathema.AnathemaCallbacks'
+callbacks: 'books.anathema.anathema.AnathemaCallbacks'
 book:
     title: Anathema
     author: chrysalis

@@ -1,7 +1,7 @@
-from lib.callbacks import HtmlCallbacks
+from lib.callbacks import Callbacks
 import re
 
-class ParahumansHtmlCallbacks(HtmlCallbacks):
+class ParahumansCallbacks(Callbacks):
 
     def __init__(self, config):
         self.config = config

@@ -1,4 +1,5 @@
-cache: './cache/html'
+cache: './cache/html/parahumans'
+callbacks: 'books.parahumans.parahumans.ParahumansCallbacks'
 book:
     title: Parahumans - Worm
     author: Wildbow

@@ -28,7 +28,7 @@ def setup_logger(debug):
     ch.setFormatter(formatter)
     root.addHandler(ch)
 
-def get_html_callback_class(callback_config_str):
+def get_callback_class(callback_config_str):
     if callback_config_str is not None:
         package = '.'.join(callback_config_str.split('.')[:-1])
         class_name = callback_config_str.split('.')[-1]
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     os.makedirs(config.cache, exist_ok=True)
 
-    klass = get_html_callback_class(config.html_callbacks)
+    klass = get_callback_class(config.callbacks)
 
     book = Book(config, klass(config))
     book.load_html()

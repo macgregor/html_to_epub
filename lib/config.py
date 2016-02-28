@@ -39,13 +39,13 @@ class Config:
         self.book = BookConfig(config['book'])
         self.cache = config['cache']
 
-        if 'html_callbacks' in config:
-            self.html_callbacks = config['html_callbacks']
+        if 'callbacks' in config:
+            self.callbacks = config['callbacks']
         else:
-            self.html_callbacks = None
+            self.callbacks = None
 
         self.debug = debug
         self.toc_break = toc_break
 
     def __str__(self):
-        return "\nConfig{{\n  cache: '{}'\n  html_callbacks: {}\n{}\n}}".format(self.cache, self.html_callbacks, str(self.book))
+        return "\nConfig{{\n  cache: '{}'\n  html_callbacks: {}\n{}\n}}".format(self.cache, self.callbacks, str(self.book))
