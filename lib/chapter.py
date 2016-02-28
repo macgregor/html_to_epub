@@ -5,6 +5,10 @@ import uuid, logging
 
 from .util import Network
 
+'''
+Chapter class - parses a web page for the chapter's title, ToC section and chapter text.
+                Also responsible for turning this into an epub.EpubHtml object
+'''
 class Chapter:    
     def __init__(self, url, config, callbacks):
         self.config = config
@@ -19,11 +23,15 @@ class Chapter:
 
     def __str__(self):
         format_str = '\nChapter{{\n  url: {}\n  title: {}\n  epub_section: {}\n  epub_filename: {}\n}}'
-        return format_str.format(self.url, self.title, self.epub_section, self.epub_filename)
+        return format_str.format(self.url, str(self.title), str(self.epub_section), str(self.epub_filename))
 
+    '''
+    Cache (if necessary) and load html dom into memory
+    '''
     def load_html(self):
         self.tree = Network.load_and_cache_html(self.url, self.cache_filename)
 
+        # initalize chapter fields in case __str__ is called
         self.get_title()
         self.get_epub_section()
         self.get_epub_filename()
@@ -31,24 +39,40 @@ class Chapter:
         logging.getLogger().debug(self)
 
         return self.tree
-        
+    
+    '''
+    Parse the chapter title from the dom
+    '''
     def get_title(self):
         match = CSSSelector(self.config.book.chapter.title_css_selector)
         self.title = self.callbacks.chapter_title_callback(match(self.tree))
     
         return self.title
 
+    '''
+    Parse the chapter text from the dom
+    '''
     def get_text(self):
         match = CSSSelector(self.config.book.chapter.text_css_selector)
 
         paragraphs = []
         for p in match(self.tree):
+            # call user callback on each matched element
             p = self.callbacks.chapter_text_callback(p)
+
+            # if the user callback returns None we ignore this element
             if p is not None:
+                #to string will give us the strong representation of the dom, including html markup which the epub can render
                 paragraphs.append(tostring(p, encoding='unicode'))
 
+        
         return ''.join(paragraphs)
 
+    '''
+    Parse the ToC section from the dom, generally this comes from manipulating the chapter title
+
+    TODO: this should be optional
+    '''
     def get_epub_section(self):
         match = CSSSelector(self.config.book.chapter.section_css_selector)
 
@@ -56,8 +80,15 @@ class Chapter:
 
         return self.epub_section
 
+    '''
+    Generate the epub's internal filename for the chapter. Epubs are basically archives filled with html files
+    tied together by some navigational structures
+    '''
     def get_epub_filename(self):
-        title = self.get_title()      
+        title = self.get_title()
+        
+        # there are some illegal character for epub file names
+        # I cant find a list so I update it when I encounter problems
         remove = [' ', '#', '\t', ':', ' '] #the last one isnt a normal space...
         for c in remove:
             title = title.replace(c, '_')
@@ -65,6 +96,10 @@ class Chapter:
         self.epub_filename = title + '.xhtml'
         return self.epub_filename
 
+    '''
+    Generate an epub.EpubHtml object based on the data parsed from the dom. Pass in the css object
+    so we can apply the styling without constructing a new one for each chapter object
+    '''
     def to_epub(self, css):
         chapter_title = self.get_title()
 
@@ -74,11 +109,19 @@ class Chapter:
 
         return epub_chapter
 
+'''
+ChapterMock class - used when the --toc-break flag is passed in at runtime. Overrides the html fetching
+                    methods so the chapter is not actually downloaded and parsed. Useful when debugging
+                    a new book you are creating. A valid epub will still be created 
+'''
 class ChapterMock(Chapter):
     def __init__(self, url, config, callbacks):
         super().__init__(url, config, callbacks)
-        self.id = str(uuid.uuid4())
+        self.id = str(uuid.uuid4()) #this makes sure the chapter mock is unique
 
+    '''
+    Removed the actual page download from Chapter and just initialize fields and print self
+    '''
     def load_html(self):
         self.get_title()
         self.get_epub_section()
@@ -86,14 +129,32 @@ class ChapterMock(Chapter):
 
         logging.getLogger().debug(self)
 
+    '''
+    Create a bogus chapter title, used the url so you can see what urls from parsing
+    the ToC
+    '''
     def get_title(self):
-        self.title = 'Mock title ' + self.id
+        self.title = self.url
         return self.title
 
+    '''
+    Some mock chapter text, should be stringified html
+    '''
     def get_text(self):
         self.text = '<p>mock chapter body '+self.id+'</p>'
         return self.text
 
+    '''
+    Mock epub section, so everythin will fall under the same section bucket
+    '''
     def get_epub_section(self):
         self.epub_section = 'Mock Section'
         return self.epub_section
+
+    '''
+    Use mock id as filename since we made the title the url and that would make
+    a horrible (and illegal) filename
+    '''
+    def get_epub_filename(self):
+        self.epub_filename = self.id + '.xhtml'
+        return self.epub_filename

@@ -6,8 +6,9 @@ import pickle, uuid, yaml, logging
 from .chapter import Chapter
 from .table_of_contents import TableOfContents
 
-global debug
-
+'''
+Book class - handles most of the epub stuff as well as initalizing TableOfContents and Chapters 
+'''
 class Book:
     def __init__(self, config, callbacks):
         self.config = config
@@ -20,6 +21,14 @@ class Book:
         with open(config.book.css_filename, 'r') as css:
             self.css = epub.EpubItem(uid='default', file_name="style/"+config.book.css_filename, media_type="text/css", content=css.read())
 
+    '''
+    Loads the html dom into memory for the table of contents and any chapters it finds on the table of contents page. If the
+    web page exists in the cache it will be loaded from the local file, otherwise it will download the web page and then 
+    load the dom.
+
+    Must be called before generate_epub. Thought of having generate_epub call this but since it does so much (downloading potentially
+    hundreds of megs of data) I wanted to give the caller more control over it.
+    '''
     def load_html(self):
         logging.getLogger().info('Loading table of contents html')
         self.toc.load_html()
@@ -29,18 +38,22 @@ class Book:
         for chapter in tqdm(self.chapters, disable=self.config.debug):
             chapter.load_html()
 
-        self.chapters = self.callbacks.sort_chapters(self.chapters)
+        if not self.config.toc_break:
+            self.chapters = self.callbacks.sort_chapters(self.chapters)
 
+    # initalizes some basic stuff needed by ebooklib: title, author, css, etc.
     def init_epub(self):
         self.book = epub.EpubBook()
         self.book.set_identifier(str(uuid.uuid4()))
         self.book.set_title(self.title)
         self.book.set_language('en')
         self.book.add_author(self.author)
-        
-        #css
         self.book.add_item(self.css)
 
+    '''
+    Turn our TableOfContetns and Chapter objects into epub format. At this point you should have called 
+    init_html() or you will get NoneType exceptions because the dom isnt loaded.
+    '''
     def generate_epub(self):
         logging.getLogger().info('Initializing epub')
         self.init_epub()
@@ -57,8 +70,9 @@ class Book:
             epub_chapter = chapter.to_epub(self.css)
 
             self.book.add_item(epub_chapter)
-            self.book.spine.append(epub_chapter)
+            self.book.spine.append(epub_chapter) # the spin is yet another epub navigational thing. theres lots of that. 
 
+            # TODO: make table of contents section optional
             epub_section = chapter.get_epub_section()
             if 'interlude' not in epub_section.lower():
                 current_section = epub_section
@@ -70,7 +84,11 @@ class Book:
             sections[epub_section].append(epub_chapter)
 
         logging.getLogger().info('Generating table of contents')
+
+        # TODO: make table of contents section optional
         self.book.toc = [(epub.Section(section), tuple(chapters)) for section, chapters in tqdm(sections.items(), disable=self.config.debug)]
+
+        # this is some boiler plate to build the navigational structures required by epub
         self.book.add_item(epub.EpubNcx())
         self.book.add_item(epub.EpubNav())
 

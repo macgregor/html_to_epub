@@ -13,6 +13,7 @@ def parse_options():
 
     return parser.parse_args()
 
+# sets up logger to go to stdout and enables debug logging when appropriate
 def setup_logger(debug):
     root = logging.getLogger()
     ch = logging.StreamHandler(sys.stdout)
@@ -28,6 +29,12 @@ def setup_logger(debug):
     ch.setFormatter(formatter)
     root.addHandler(ch)
 
+'''
+dynamically load the Callbacks class. If it is provided in the user's config.yaml we
+import the custom module, otherwise we create a normal Callbacks class.
+
+Returns the class contructor, does not actually instantiate the object
+'''
 def get_callback_class(callback_config_str):
     if callback_config_str is not None:
         package = '.'.join(callback_config_str.split('.')[:-1])
