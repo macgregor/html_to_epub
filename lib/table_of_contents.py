@@ -41,7 +41,7 @@ class TableOfContents:
             # link will be None if the user wants to ignore it
             link = self.callbacks.toc_chapters_callback(link)
 
-            if link is not None:
+            if link is not None and link.get('href') is not None:
                 # if toc_break flagg set, create ChapterMocks so we dont actually download the chapters
                 if not self.config.toc_break:
                     chapter = Chapter(link.get('href'), self.config, self.callbacks)

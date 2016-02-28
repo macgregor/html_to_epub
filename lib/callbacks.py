@@ -70,11 +70,12 @@ class Callbacks(object, metaclass=ABCMeta):
     def toc_chapters_callback(self, selector_match):
         href = selector_match.get('href')
         
-        logging.getLogger().debug('Found toc link: ' + href)
+        if href is not None:            
+            logging.getLogger().debug('Found toc link: ' + href)
 
-        if not href.startswith('https://'):
-            href = 'https://' + href
-        selector_match.set('href', href)
+            if not href.startswith('https://'):
+                href = 'https://' + href
+            selector_match.set('href', href)
         return selector_match
 
     '''
