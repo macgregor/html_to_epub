@@ -12,7 +12,7 @@ class Book:
     def __init__(self, config, htmlCallbacks):
         self.config = config
         self.toc = TableOfContents(config, htmlCallbacks)
-        self.chapters = None
+        self.chapters = []
         self.title = config.book.title
         self.author = config.book.author
 

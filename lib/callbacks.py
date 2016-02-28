@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import logging
 
 '''
 Base class used to implement custom callbacks when parsing html. If you cannot identify exactly what you want in a css selector
@@ -10,6 +11,9 @@ Some methods are called on each element that matches a selector, others are call
 a selector. Read the description of each method carefully for what inputs and outputs to expect.
 '''
 class HtmlCallbacks(object, metaclass=ABCMeta):
+
+    def __init__(self):
+        logging.getLogger().debug('Instantiating HtmlCallbacks class')
 
     '''
     Callback funtion executed on the result of the css selector in Chapter.get_epub_section(). The section
@@ -65,6 +69,9 @@ class HtmlCallbacks(object, metaclass=ABCMeta):
     '''
     def toc_chapters_callback(self, selector_match):
         href = selector_match.get('href')
+        
+        logging.getLogger().debug('Found toc link: ' + href)
+
         if not href.startswith('https://'):
             href = 'https://' + href
         selector_match.set('href', href)

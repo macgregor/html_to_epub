@@ -31,14 +31,21 @@ class BookConfig:
 
 class Config:
 
-    def __init__(self, filename, debug=False):
+    def __init__(self, filename, debug=False, toc_break=False):
         logging.getLogger().debug('Loading yaml config ' + filename)
         with open(filename, 'r') as ymlfile:
             config = yaml.load(ymlfile)
 
         self.book = BookConfig(config['book'])
         self.cache = config['cache']
+
+        if 'html_callbacks' in config:
+            self.html_callbacks = config['html_callbacks']
+        else:
+            self.html_callbacks = None
+
         self.debug = debug
+        self.toc_break = toc_break
 
     def __str__(self):
-        return "\nConfig{{\n  cache: '{}'\n{}\n}}".format(self.cache, str(self.book))
+        return "\nConfig{{\n  cache: '{}'\n  html_callbacks: {}\n{}\n}}".format(self.cache, self.html_callbacks, str(self.book))

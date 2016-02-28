@@ -2,9 +2,9 @@ import lxml.html
 from lxml.cssselect import CSSSelector
 from collections import OrderedDict
 from tqdm import tqdm
-import yaml, logging
+import logging
 
-from .chapter import Chapter
+from .chapter import Chapter, ChapterMock
 from .util import Network
 
 class TableOfContents:
@@ -28,7 +28,11 @@ class TableOfContents:
         for link in tqdm(match(self.tree), disable=self.config.debug):
             link = self.htmlCallbacks.toc_chapters_callback(link)
             
-            chapter = Chapter(link.get('href'), self.config, self.htmlCallbacks)
+
+            if not self.config.toc_break:
+                chapter = Chapter(link.get('href'), self.config, self.htmlCallbacks)
+            else:
+                chapter = ChapterMock(link.get('href'), self.config, self.htmlCallbacks)
 
             if chapter is not None and chapter.url not in chapters:
                 chapters[link.get('href')] = chapter
