@@ -20,9 +20,9 @@ class Book:
             self.css = epub.EpubItem(uid='default', file_name="style/"+config.book.css_filename, media_type="text/css", content=css.read())
 
     '''
-    Loads the html dom into memory for the table of contents and any chapters it finds on the table of contents page. If the
-    web page exists in the cache it will be loaded from the local file, otherwise it will download the web page and then 
-    load the dom.
+    Walks through a web page starting with config.book.entry_point, finding a 'next chapter' link and continueing until
+    a next chapter link cannot be found. If a web page exists in the cache it will be loaded from the local file, 
+    otherwise it will download the web page and then load the dom.
 
     Must be called before generate_epub. Thought of having generate_epub call this but since it does so much (downloading potentially
     hundreds of megs of data) I wanted to give the caller more control over it.
@@ -36,19 +36,22 @@ class Book:
         max_iterations = self.config.max_chapter_iterations
         i = 0
 
-        while next is not None and i < max_iterations:
-            current = next
-            current.load_html()
+        logging.getLogger().info('Walking through chapters (this could take a while)')
+        with tqdm() as pbar:
+            while next is not None and i < max_iterations:
+                current = next
+                current.load_html()
 
-            self.chapters.append(current)
+                self.chapters.append(current)
 
-            next = current.get_next_chapter()
-            i += 1
+                next = current.get_next_chapter()
+                i += 1
+                pbar.update(1)
 
-        if i == max_iterations:
-            logging.getLogger().warn('Possible infinite loop detected, check your next_chapter_css_selector and/or chapter_next_callback callback function or increase config.max_chapter_iterations value')
+            if i == max_iterations:
+                logging.getLogger().warn('Possible infinite loop detected, check your next_chapter_css_selector and/or chapter_next_callback callback function or increase config.max_chapter_iterations value')
 
-        self.chapters = self.callbacks.sort_chapters(self.chapters)
+            self.chapters = self.callbacks.sort_chapters(self.chapters)
 
 
     # initalizes some basic stuff needed by ebooklib: title, author, css, etc.

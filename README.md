@@ -28,27 +28,26 @@ Disclaimer: I have only used this on a couple websites so there are probably a m
 That said, I designed it to be as generic as possible. If you have a (very) well structured website and you are good with css selectors you could turn a website 
 into an epub with a simple yaml file like this one:
 ```yaml
-cache: './cache/html'
+cache: './cache/html/parahumans'
 callbacks: 'books.parahumans.parahumans.ParahumansCallbacks'
 book:
     title: Parahumans - Worm
     author: Wildbow
     epub_filename: ./books/parahumans/parahumans.epub
     css_filename: 'kindle.css'
-    table_of_contents:
-        url: 'https://parahumans.wordpress.com/table-of-contents/'
-        chapter_link_css_selector: 'div.entry-content a:not([href*="share"])'
+    entry_point: 'https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-1-gestation/1-01/'
     chapter:
         title_css_selector: 'h1.entry-title a, h1.entry-title'
         section_css_selector: 'h1.entry-title a, h1.entry-title'
         text_css_selector: 'div.entry-content p'
+        next_chapter_css_selector: 'div.entry-content a[title="Next Chapter"], div.entry-content a:not([title])'
 ```
 
 
-Some interesting things to note in the config are cache, callbacks and the various css selectors. More on these below. The table_of_contents url is the entry point. We go here and get an ordered list
-of urls for each chapter of the ebook. CSS selectors are used to identify what we care about on a page, with optional callback hooks to further parse html elements in python.
-The css selectors are lxml selectors which are compiled to xpaths under the hood. They implement the vast magority of css selector features but there are limitations I ran in to
-during testing, though I am have having trouble finding a concise explanation of the limitations right now.
+Some interesting things to note in the config are cache, callbacks and the various css selectors. More on these below. We navigate the web site like a linked list, 
+locating links to the next chapter until we cant find them anymore. CSS selectors are used to identify what we care about on a page, with optional callback hooks to 
+further parse html elements in python. The css selectors are lxml selectors which are compiled to xpaths under the hood. They implement the vast magority of 
+css selector features but there are limitations I ran in to during testing, though I am have having trouble finding a concise explanation of the limitations right now.
 
 
 ##cache
@@ -103,21 +102,24 @@ class ParahumansCallbacks(Callbacks):
 ```
 
 
-##table_of_contents.url
-The entry point on the website for building the ebook. This page should have an ordered list of chapter urls we can use to navigate the rest of the site. By defaults the order the urls
-appear on this page will be the order they appear in the ebook. This behavior can be overridden by overriding `Callbacks.sort_chapters()`
-
-
-##table_of_contents.chapter_link_css_selector
-CSS Selector used on the table of contents page to identify links to turn into chapters.
+##entry_point.entry_point
+The entry point on the website for building the ebook. This should be the first chapter in the book, with a link to the next chapter which the script
+cant walk through to the end of the book. By defaults the order of the chapters will be the same that are encountered while navigating the web page. 
+This behavior can be overridden by overriding `Callbacks.sort_chapters(chapters)`
 
 
 ##chapter.title_css_selector
+Related callback: `Callbacks.chapter_title_callback(selector_matches)`
+
+
 CSS selector used on each chapter on the table of contents page to identify the title of the chapter. This is put into the chapter body of the epub as a header and also used when building the navigational
 structures required by the epub standard. This needs to uniquely identify an element for the title, by default it will use the text of the first match it finds if there are multiple.
 
 
 ##chapter.section_css_selector
+Related callback: `Callbacks.chapter_section_callback(selector_matches)`
+
+
 Similar to the title css selector. Used when building the ebooks table of contents to group related chapters.
 
 1. Introduction
@@ -134,7 +136,17 @@ This can be a huge pain in the ass and isnt always applicable so I plan on makin
 
 
 ##chapter.text_css_selector
+Related callback: `Callbacks.chapter_text_callback(selector_match)`
+
+
 CSS selector used to identify the chapter body on the web page.
+
+
+##chapter.next_chapter_css_selector
+Related callback: `Callbacks.chapter_next_callback(selector_matches)`
+
+
+CSS selector used to identify the link to the next chapter.
 
 
 ##css_filename

@@ -5,13 +5,7 @@ class ParahumansCallbacks(Callbacks):
 
     def __init__(self, config):
         self.config = config
-
-    def chapter_next_callback(self, selector_matches):
-        for match in selector_matches:
-            if 'Next Chapter' == match.get('title') or 'Next Chapter' in match.text:
-                return match.get('href')
-
-        return None
+        self.sections = dict()
 
     def chapter_text_callback(self, selector_match):
         if len(selector_match.cssselect('a')) == 0:
@@ -28,6 +22,15 @@ class ParahumansCallbacks(Callbacks):
         return title
 
     def chapter_section_callback(self, selector_matches):
-        section_regex = '^(\w+)\s*.*$'
+        section_regex = '^(\w+)\s*(\d*)\\.*(\d*).*$'
         title = self.chapter_title_callback(selector_matches)
-        return re.match(section_regex, title).group(1)
+        regex_match = re.match(section_regex, title)
+
+        if 'interlude' in regex_match.group(1).lower():
+            return self.sections[regex_match.group(2)]
+
+        if regex_match.group(2) not in self.sections:
+            self.sections[regex_match.group(2)] = regex_match.group(1)
+            
+
+        return self.sections[regex_match.group(2)]
