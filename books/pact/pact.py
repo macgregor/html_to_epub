@@ -1,4 +1,5 @@
 from lib.callbacks import Callbacks
+from lxml.etree import tostring
 import re, logging
 
 class PactCallbacks(Callbacks):
@@ -7,19 +8,12 @@ class PactCallbacks(Callbacks):
         self.config = config
         self.sections = dict()
 
-    def toc_chapters_callback(self, selector_match):
-        href = selector_match.get('href')
+    def chapter_next_callback(self, selector_matches):
+        for match in selector_matches:
+            if 'Next Chapter' == match.get('title') or 'Next Chapter' in tostring(match, encoding='unicode'):
+                return match.get('href')
 
-        # fix a 404 on the table of contents page
-        if href == 'https://pactwebserial.wordpress.com/2014/07/08/693/':
-            selector_match.set('href', 'https://pactwebserial.wordpress.com/2014/07/08/signature-8-1/')
-        elif href == '4031384495743822299':
-            selector_match.set('href', 'https://pactwebserial.wordpress.com/2015/01/08/possession-15-2/')
-        # chapter 6.11 is missing completely, this bad link in its place
-        elif href == 'https://pactwebserial.wordpress.com/table-of-contents/':
-            del selector_match.attrib['href']
-
-        return super().toc_chapters_callback(selector_match)
+        return None
 
     def chapter_text_callback(self, selector_match):
         if len(selector_match.cssselect('a')) == 0:

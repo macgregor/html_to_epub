@@ -5,10 +5,9 @@ book:
     author: Wildbow
     epub_filename: ./books/parahumans/parahumans.epub
     css_filename: 'kindle.css'
-    table_of_contents:
-        url: 'https://parahumans.wordpress.com/table-of-contents/'
-        chapter_link_css_selector: 'div.entry-content a:not([href*="share"])'
+    entry_point: 'https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-1-gestation/1-01/'
     chapter:
         title_css_selector: 'h1.entry-title a, h1.entry-title'
         section_css_selector: 'h1.entry-title a, h1.entry-title'
         text_css_selector: 'div.entry-content p'
+        next_chapter_css_selector: 'div.entry-content a[title="Next Chapter"], div.entry-content a:not([title])'

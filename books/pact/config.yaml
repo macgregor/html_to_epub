@@ -5,10 +5,9 @@ book:
     author: Wildbow
     epub_filename: ./books/pact/pact.epub
     css_filename: 'kindle.css'
-    table_of_contents:
-        url: 'https://pactwebserial.wordpress.com/table-of-contents/'
-        chapter_link_css_selector: 'div.entry-content a:not([href*="share"])'
+    entry_point: 'https://pactwebserial.wordpress.com/2013/12/17/bonds-1-1/'
     chapter:
         title_css_selector: 'h1.entry-title a, h1.entry-title'
         section_css_selector: 'h1.entry-title a, h1.entry-title'
         text_css_selector: 'div.entry-content p'
+        next_chapter_css_selector: 'div.entry-content a[title="Next Chapter"], div.entry-content p a'

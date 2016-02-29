@@ -5,10 +5,10 @@ book:
     author: chrysalis
     epub_filename: ./books/anathema/anathema.epub
     css_filename: 'kindle.css'
-    table_of_contents:
-        url: 'https://anathemaserial.wordpress.com/table-of-contents/'
-        chapter_link_css_selector: 'div.entry-content p a:not([href*="share"])'
+    entry_point: 'https://anathemaserial.wordpress.com/2014/06/11/22/'
     chapter:
         title_css_selector: 'h1.entry-title'
         section_css_selector: 'h1.entry-title'
         text_css_selector: 'div.entry-content p'
+        next_chapter_css_selector: 'div.entry-content a[title="Next Chapter"], div.entry-content>p>a'
+        

@@ -15,6 +15,7 @@ class Chapter:
         self.callbacks = callbacks
         self.url = Network.clean_url(url)
         self.cache_filename = Network.cache_filename(self.config.cache, self.url)
+        self.next = None
         self.tree = None
         self.title = None
         self.epub_section = None
@@ -69,6 +70,19 @@ class Chapter:
         return ''.join(paragraphs)
 
     '''
+    Construct the next chapter object from the url parsed from the dom
+    '''
+    def get_next_chapter(self):
+        match = CSSSelector(self.config.book.chapter.next_chapter_css_selector)
+
+        url = self.callbacks.chapter_next_callback(match(self.tree))
+        
+        if url is not None:
+            self.next = Chapter(url ,self.config, self.callbacks)
+
+        return self.next
+
+    '''
     Parse the ToC section from the dom, generally this comes from manipulating the chapter title
 
     TODO: this should be optional
@@ -108,53 +122,3 @@ class Chapter:
         epub_chapter.add_item(css)
 
         return epub_chapter
-
-'''
-ChapterMock class - used when the --toc-break flag is passed in at runtime. Overrides the html fetching
-                    methods so the chapter is not actually downloaded and parsed. Useful when debugging
-                    a new book you are creating. A valid epub will still be created 
-'''
-class ChapterMock(Chapter):
-    def __init__(self, url, config, callbacks):
-        super().__init__(url, config, callbacks)
-        self.id = str(uuid.uuid4()) #this makes sure the chapter mock is unique
-
-    '''
-    Removed the actual page download from Chapter and just initialize fields and print self
-    '''
-    def load_html(self):
-        self.get_title()
-        self.get_epub_section()
-        self.get_epub_filename()
-
-        logging.getLogger().debug(self)
-
-    '''
-    Create a bogus chapter title, used the url so you can see what urls from parsing
-    the ToC
-    '''
-    def get_title(self):
-        self.title = self.url
-        return self.title
-
-    '''
-    Some mock chapter text, should be stringified html
-    '''
-    def get_text(self):
-        self.text = '<p>mock chapter body '+self.id+'</p>'
-        return self.text
-
-    '''
-    Mock epub section, so everythin will fall under the same section bucket
-    '''
-    def get_epub_section(self):
-        self.epub_section = 'Mock Section'
-        return self.epub_section
-
-    '''
-    Use mock id as filename since we made the title the url and that would make
-    a horrible (and illegal) filename
-    '''
-    def get_epub_filename(self):
-        self.epub_filename = self.id + '.xhtml'
-        return self.epub_filename

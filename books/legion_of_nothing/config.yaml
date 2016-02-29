@@ -1,0 +1,12 @@
+cache: './cache/html/legion_of_nothing'
+book:
+    title: Legion of Nothing
+    author: Jim Zoetewey
+    epub_filename: ./books/legion_of_nothing/legion_of_nothing.epub
+    css_filename: 'kindle.css'    
+    entry_point: 'http://inmydaydreams.com/?p=17'
+    chapter:
+        title_css_selector: 'h1.entry-title'
+        section_css_selector: 'a[rel="category"]'
+        text_css_selector: 'div.entry-content p'
+        next_chapter_css_selector: 'div.nav-links a[rel="next"]'

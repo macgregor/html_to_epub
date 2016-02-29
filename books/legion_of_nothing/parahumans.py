@@ -6,13 +6,6 @@ class ParahumansCallbacks(Callbacks):
     def __init__(self, config):
         self.config = config
 
-    def chapter_next_callback(self, selector_matches):
-        for match in selector_matches:
-            if 'Next Chapter' == match.get('title') or 'Next Chapter' in match.text:
-                return match.get('href')
-
-        return None
-
     def chapter_text_callback(self, selector_match):
         if len(selector_match.cssselect('a')) == 0:
             return selector_match

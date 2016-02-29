@@ -1,10 +1,9 @@
 from collections import OrderedDict
 from ebooklib import epub
 from tqdm import tqdm
-import pickle, uuid, yaml, logging
+import pickle, uuid, logging
 
 from .chapter import Chapter
-from .table_of_contents import TableOfContents
 
 '''
 Book class - handles most of the epub stuff as well as initalizing TableOfContents and Chapters 
@@ -13,7 +12,6 @@ class Book:
     def __init__(self, config, callbacks):
         self.config = config
         self.callbacks = callbacks
-        self.toc = TableOfContents(config, callbacks)
         self.chapters = []
         self.title = config.book.title
         self.author = config.book.author
@@ -30,16 +28,28 @@ class Book:
     hundreds of megs of data) I wanted to give the caller more control over it.
     '''
     def load_html(self):
-        logging.getLogger().info('Loading table of contents html')
-        self.toc.load_html()
-        self.chapters = self.toc.get_chapters()
-        
-        logging.getLogger().info('Loading chapter html (this could take a while)')
-        for chapter in tqdm(self.chapters, disable=self.config.debug):
-            chapter.load_html()
+        current = Chapter(self.config.book.entry_point, self.config, self.callbacks)
+        current.load_html()
+        self.chapters.append(current)
 
-        if not self.config.toc_break:
-            self.chapters = self.callbacks.sort_chapters(self.chapters)
+        next = current.get_next_chapter()
+        max_iterations = self.config.max_chapter_iterations
+        i = 0
+
+        while next is not None and i < max_iterations:
+            current = next
+            current.load_html()
+
+            self.chapters.append(current)
+
+            next = current.get_next_chapter()
+            i += 1
+
+        if i == max_iterations:
+            logging.getLogger().warn('Possible infinite loop detected, check your next_chapter_css_selector and/or chapter_next_callback callback function or increase config.max_chapter_iterations value')
+
+        self.chapters = self.callbacks.sort_chapters(self.chapters)
+
 
     # initalizes some basic stuff needed by ebooklib: title, author, css, etc.
     def init_epub(self):
@@ -74,10 +84,6 @@ class Book:
 
             # TODO: make table of contents section optional
             epub_section = chapter.get_epub_section()
-            if 'interlude' not in epub_section.lower():
-                current_section = epub_section
-            else:
-                epub_section = current_section
 
             if epub_section not in sections:
                 sections[epub_section] = []

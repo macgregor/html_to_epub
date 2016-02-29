@@ -1,4 +1,5 @@
 from lib.callbacks import Callbacks
+from lxml.etree import tostring
 import re, logging
 
 class AnathemaCallbacks(Callbacks):
@@ -10,6 +11,14 @@ class AnathemaCallbacks(Callbacks):
         logging.getLogger().debug('Instantiating AnathemaCallbacks class')
         self.config = config
         self.sections = dict()
+
+    def chapter_next_callback(self, selector_matches):
+        for match in selector_matches:
+            logging.getLogger().debug(match.get('href'))
+            if 'next' in tostring(match, encoding='unicode').lower() and match.get('href') != 'https://anathemaserial.wordpress.com/bonus-incentive/':                
+                    return match.get('href')
+
+        return None
 
     # have to sort the entire list because that 1 chapter is out of order in the ToC page
     def sort_chapters(self, chapters):
